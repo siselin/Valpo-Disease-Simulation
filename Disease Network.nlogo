@@ -37,11 +37,11 @@ end
 
 
 to set-roomates
-    while [count roomies < n][
+    while [count roomies < floor (count turtles / 2)][
   ask one-of turtles  with [count my-roomies < 1]
     [create-roomie-with one-of other turtles with [count my-roomies < 1]
     ]]
-    ask wings [set winged false]
+    ask roomies [set winged false]
 end
 
 to set-wings
