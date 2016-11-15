@@ -6,13 +6,14 @@ undirected-link-breed [classes class]
 undirected-link-breed [friends friend]
 undirected-link-breed [wings wing]
 
-roomies-own [winged]
+roomies-own [wing-index]
+links-own [contact-rate]
 
 globals []
 
 to setup
   clear-all
-  create-turtles 4 * n
+  create-turtles num-students
 
   layout-circle turtles 10
 
@@ -21,7 +22,8 @@ to setup
   set-wings
   set-classes
 
-
+  ask roomies [set contact-rate random-float 1]
+  ask classes [set contact-rate 0.5 * random-float 1]
   reset-ticks
 end
 
@@ -34,22 +36,23 @@ to go
   tick
 end
 
-
-
 to set-roomates
-    while [count roomies < floor (count turtles / 2)][
+  let x 0
+    while [count turtles with [count my-roomies < 1] > 1][
   ask one-of turtles  with [count my-roomies < 1]
     [create-roomie-with one-of other turtles with [count my-roomies < 1]
+       [ask roomies [set wing-index x]
+     set x ((x + 1) mod num-wings]
     ]]
-    ask roomies [set winged false]
+
 end
 
 to set-wings
-;  while any? roomies with [winged = false]
-;  [  let this-wing 10-of roomies with [winged = false]
-;     let these-turtles turtles with [
-;
-;  ]
+  let x 0
+  while x < num-wings
+  [  ask
+
+  ]
 end
 
 to set-classes
@@ -145,11 +148,26 @@ SLIDER
 159
 192
 192
-n
-n
-10
-20
-15
+num-students
+num-students
+100
+1000
+101
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+24
+212
+196
+245
+num-wings
+num-wings
+5
+30
+16
 1
 1
 NIL
