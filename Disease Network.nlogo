@@ -22,7 +22,9 @@ to setup
   set-wings
   set-classes
 
-  ask roomies [set contact-rate random-float 1]
+  ask roomies [
+    set contact-rate random-float 1
+    set color white]
   ask classes [set contact-rate 0.5 * random-float 1]
   reset-ticks
 end
@@ -41,17 +43,24 @@ to set-roomates
     while [count turtles with [count my-roomies < 1] > 1][
   ask one-of turtles  with [count my-roomies < 1]
     [create-roomie-with one-of other turtles with [count my-roomies < 1]
-       [ask roomies [set wing-index x]
-     set x ((x + 1) mod num-wings]
-    ]]
+       [set wing-index x]
+     set x ((x + 1) mod num-wings)]
+    ]
 
 end
 
 to set-wings
   let x 0
-  while x < num-wings
-  [  ask
-
+  while [x < num-wings]
+  [ let this-wing turtles with [count my-roomies with [wing-index = x] > 0]
+    while [ count this-wing with [count my-wings < (count this-wing - 1)] > 0] [
+      ask one-of this-wing with [count my-wings < (count this-wing - 1)] [
+        while [count my-wings < (count this-wing - 1)]
+        [ create-wing-with one-of other this-wing ;super duper inefficient
+        ]
+      ]
+    ]
+    set x (x + 1)
   ]
 end
 
@@ -150,9 +159,9 @@ SLIDER
 192
 num-students
 num-students
-100
+0
 1000
-101
+529
 1
 1
 NIL
@@ -167,11 +176,28 @@ num-wings
 num-wings
 5
 30
-16
+30
 1
 1
 NIL
 HORIZONTAL
+
+BUTTON
+23
+274
+155
+307
+Wing Links On/Off
+ask wings [ set hidden? not hidden?]
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
