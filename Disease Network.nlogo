@@ -1,4 +1,6 @@
-turtles-own[]
+turtles-own[
+  infected?
+]
 patches-own[]
 
 undirected-link-breed [roomies roomie]
@@ -14,8 +16,11 @@ to setup
   clear-all
   create-turtles 4 * n
 
+  ask turtles [set color gray]
+
   layout-circle turtles 10
 
+  set-original-infection
 
   set-roomates
   set-wings
@@ -60,6 +65,13 @@ to set-classes
 ;    create-roomies-with other these
 ;  ]]
 
+end
+
+;infection mechanics
+
+to set-original-infection
+  let number-infected initial-percent-infected * 4 * n
+  ask n-of number-infected turtles [ set infected? true set color red]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -151,6 +163,21 @@ n
 20
 15
 1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+19
+217
+198
+250
+initial-percent-infected
+initial-percent-infected
+0
+1
+0.1
+.01
 1
 NIL
 HORIZONTAL
