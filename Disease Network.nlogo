@@ -8,13 +8,14 @@ undirected-link-breed [classes class]
 undirected-link-breed [friends friend]
 undirected-link-breed [wings wing]
 
-roomies-own [winged]
+roomies-own [wing-index]
+links-own [contact-rate]
 
 globals []
 
 to setup
   clear-all
-  create-turtles 4 * n
+  create-turtles num-students
 
   ask turtles [set color gray]
 
@@ -26,7 +27,10 @@ to setup
   set-wings
   set-classes
 
-
+  ask roomies [
+    set contact-rate random-float 1
+    set color white]
+  ask classes [set contact-rate 0.5 * random-float 1]
   reset-ticks
 end
 
@@ -39,22 +43,30 @@ to go
   tick
 end
 
-
-
 to set-roomates
-    while [count roomies < floor (count turtles / 2)][
+  let x 0
+    while [count turtles with [count my-roomies < 1] > 1][
   ask one-of turtles  with [count my-roomies < 1]
     [create-roomie-with one-of other turtles with [count my-roomies < 1]
-    ]]
-    ask roomies [set winged false]
+       [set wing-index x]
+     set x ((x + 1) mod num-wings)]
+    ]
+
 end
 
 to set-wings
-;  while any? roomies with [winged = false]
-;  [  let this-wing 10-of roomies with [winged = false]
-;     let these-turtles turtles with [
-;
-;  ]
+  let x 0
+  while [x < num-wings]
+  [ let this-wing turtles with [count my-roomies with [wing-index = x] > 0]
+    while [ count this-wing with [count my-wings < (count this-wing - 1)] > 0] [
+      ask one-of this-wing with [count my-wings < (count this-wing - 1)] [
+        while [count my-wings < (count this-wing - 1)]
+        [ create-wing-with one-of other this-wing ;super duper inefficient
+        ]
+      ]
+    ]
+    set x (x + 1)
+  ]
 end
 
 to set-classes
@@ -157,17 +169,18 @@ SLIDER
 159
 192
 192
-n
-n
-10
-20
-15
+num-students
+num-students
+0
+1000
+529
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
+<<<<<<< HEAD
 19
 217
 198
@@ -178,10 +191,42 @@ initial-percent-infected
 1
 0.1
 .01
+=======
+24
+212
+196
+245
+num-wings
+num-wings
+5
+30
+30
+1
+>>>>>>> refs/remotes/origin/master
 1
 NIL
 HORIZONTAL
 
+<<<<<<< HEAD
+=======
+BUTTON
+23
+274
+155
+307
+Wing Links On/Off
+ask wings [ set hidden? not hidden?]
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+>>>>>>> refs/remotes/origin/master
 @#$#@#$#@
 ## WHAT IS IT?
 
