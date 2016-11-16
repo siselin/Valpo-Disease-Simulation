@@ -82,7 +82,7 @@ end
 ;infection mechanics
 
 to set-original-infection
-  let number-infected initial-percent-infected * 4 * n
+  let number-infected initial-percent-infected * num-students
   ask n-of number-infected turtles [ set infected? true set color red]
 end
 @#$#@#$#@
@@ -180,7 +180,6 @@ NIL
 HORIZONTAL
 
 SLIDER
-<<<<<<< HEAD
 19
 217
 198
@@ -191,7 +190,11 @@ initial-percent-infected
 1
 0.1
 .01
-=======
+1
+HORIZONTAL
+HORIZONTAL
+
+SLIDER
 24
 212
 196
@@ -202,13 +205,10 @@ num-wings
 30
 30
 1
->>>>>>> refs/remotes/origin/master
 1
 NIL
 HORIZONTAL
 
-<<<<<<< HEAD
-=======
 BUTTON
 23
 274
@@ -226,7 +226,6 @@ NIL
 NIL
 1
 
->>>>>>> refs/remotes/origin/master
 @#$#@#$#@
 ## WHAT IS IT?
 
