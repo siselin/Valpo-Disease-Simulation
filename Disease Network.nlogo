@@ -36,7 +36,8 @@ end
 
 
 to go
-
+  try-to-infect
+  try-to-heal
 
 
 
@@ -84,6 +85,28 @@ end
 to set-original-infection
   let number-infected initial-percent-infected * num-students
   ask n-of number-infected turtles [ set infected? true set color red]
+end
+
+to try-to-infect
+  ;doesn't take contact-rate into consideration
+  ask turtles [
+    if infected? = true
+    [
+      ;50/50 chance of getting infected
+      if random-float 1 < 0.5
+      [
+        ask link-neighbors [
+          set infected? true set color red
+        ]
+      ]
+    ]
+  ]
+end
+
+to try-to-heal
+end
+
+to die-from-illness
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -173,25 +196,25 @@ num-students
 num-students
 0
 1000
-529
+19
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-19
-217
-198
-250
+17
+116
+196
+149
 initial-percent-infected
 initial-percent-infected
 0
 1
-0.1
+0.12
 .01
 1
-HORIZONTAL
+NIL
 HORIZONTAL
 
 SLIDER
@@ -203,7 +226,7 @@ num-wings
 num-wings
 5
 30
-30
+25
 1
 1
 NIL
