@@ -17,7 +17,7 @@ to setup
   clear-all
   create-turtles num-students
 
-  ask turtles [set color gray]
+  ask turtles [set color gray set infected? false]
 
   layout-circle turtles 10
 
@@ -88,16 +88,10 @@ to set-original-infection
 end
 
 to try-to-infect
-  ;doesn't take contact-rate into consideration
   ask turtles [
-    if infected? = true
-    [
-      ;50/50 chance of getting infected
-      if random-float 1 < 0.5
-      [
-        ask link-neighbors [
-          set infected? true set color red
-        ]
+    if infected? [
+      ask my-links [
+        if random-float 1 < ([contact-rate] of self) [ask both-ends [ set color red set infected? true ]]
       ]
     ]
   ]
