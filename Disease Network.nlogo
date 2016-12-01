@@ -2,13 +2,16 @@ turtles-own[
   infected?
   immune?
   sick-timer
+  gender
 ]
+
 patches-own[]
 
 undirected-link-breed [roomies roomie]
 undirected-link-breed [classes class]
 undirected-link-breed [friends friend]
 undirected-link-breed [wings wing]
+undirected-link-breed [relationships relationship]
 
 roomies-own [wing-index]
 links-own [contact-rate]
@@ -22,6 +25,11 @@ to setup
   ask turtles [become-susceptible]
 
   layout-circle turtles 10
+  ask turtles [
+    ifelse random 2 = 0 [
+      set gender "m"] [
+      set gender "f"]
+  ]
 
   set-original-infection
   set-original-immune
@@ -29,6 +37,7 @@ to setup
   set-roomates
   set-wings
   set-classes
+  set-relationships
 
   ask roomies [
     set contact-rate random-float 1
@@ -46,20 +55,29 @@ to go
   try-to-infect
   try-to-heal
 
-
-
   tick
 end
 
 to set-roomates
+  let males turtles with [gender = "m"]
+  let females turtles with [gender = "f"]
+
   let x 0
-    while [count turtles with [count my-roomies < 1] > 1][
-  ask one-of turtles  with [count my-roomies < 1]
-    [create-roomie-with one-of other turtles with [count my-roomies < 1]
+    while [count males with [count my-roomies < 1] > 1][
+  ask one-of males  with [count my-roomies < 1]
+    [create-roomie-with one-of other males with [count my-roomies < 1]
        [set wing-index x]
-     set x ((x + 1) mod num-wings)]
+     set x ((x + 1) mod (num-wings / 2))]
     ]
 
+    set x ((num-wings / 2) + (x + 1) mod (num-wings / 2))
+
+    while [count females with [count my-roomies < 1] > 1][
+  ask one-of females  with [count my-roomies < 1]
+    [create-roomie-with one-of other females with [count my-roomies < 1]
+       [set wing-index x]
+     set x ((num-wings / 2) + (x + 1) mod (num-wings / 2))]
+    ]
 end
 
 to set-wings
@@ -69,7 +87,7 @@ to set-wings
     while [ count this-wing with [count my-wings < (count this-wing - 1)] > 0] [
       ask one-of this-wing with [count my-wings < (count this-wing - 1)] [
         while [count my-wings < (count this-wing - 1)]
-        [ create-wing-with one-of other this-wing ;super duper inefficient
+        [ create-wing-with one-of other this-wing with [ not wing-neighbor? myself] ;super duper inefficient
         ]
       ]
     ]
@@ -149,6 +167,21 @@ to try-to-heal
       [become-immune]
     ]
     [die]
+  ]
+end
+
+to set-relationships
+  let males turtles with [gender = "m"]
+  let females turtles with [gender = "f"]
+  let lesser 0
+  ifelse (count males > count females)
+  [ set lesser count females]
+  [ set lesser count males]
+
+  while [count relationships / lesser < (relationship-ratio / 100)]
+  [
+    ask one-of males with [count my-relationships = 0]
+    [ create-relationship-with one-of females with [count my-relationships = 0]]
   ]
 end
 @#$#@#$#@
@@ -239,7 +272,7 @@ num-students
 num-students
 0
 1000
-38
+490
 1
 1
 NIL
@@ -254,22 +287,22 @@ initial-percent-infected
 initial-percent-infected
 0
 1
-0.61
-.01
+0.2
+0.01
 1
-NIL
+1
 HORIZONTAL
 
 SLIDER
-24
-212
-196
-245
+20
+195
+192
+228
 num-wings
 num-wings
-5
+2
 30
-25
+11
 1
 1
 NIL
@@ -320,6 +353,21 @@ check-frequency
 1
 1
 days
+HORIZONTAL
+
+SLIDER
+19
+231
+191
+264
+relationship-ratio
+relationship-ratio
+0
+100
+20
+1
+1
+%
 HORIZONTAL
 
 @#$#@#$#@
