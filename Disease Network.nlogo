@@ -14,7 +14,7 @@ globals []
 
 to setup
   clear-all
-  create-turtles num-students
+  create-turtles num-students;3200
 
   layout-circle turtles 10
   ask turtles [
@@ -104,6 +104,42 @@ to set-relationships
   [
     ask one-of males with [count my-relationships = 0]
     [ create-relationship-with one-of females with [count my-relationships = 0]]
+  ]
+end
+
+to connect
+  let i 0
+  let j 0
+  let dist []
+  let temp []
+  while [i < 20] [
+    set j i + 1
+    while[j < 20] [
+      set temp lput sqrt(([xcor] of turtle i - [xcor] of turtle j) * ([xcor] of turtle i - [xcor] of turtle j) + ([ycor] of turtle i - [ycor] of turtle j) * ([ycor] of turtle i - [ycor] of turtle j)) temp
+      set temp lput i temp
+      set temp lput j temp
+      set dist lput temp dist
+      set temp []
+      set j j + 1
+    ]
+    set i i + 1
+  ]
+  set dist sort-by [first  ?1 < first ?2] dist
+  show length dist
+  set i 0
+  while [i < 2 * 20] [  ;Uniform random between 1.5 and 3 times class size?
+    ask turtle (item 1 (item i dist)) [create-class-with turtle (item 2 (item i dist))]
+    set i i + 1
+  ]
+end
+
+to move-to-class
+  ;random-seed 6707884
+  clear-links
+  let i 0
+  while [i < 20] [
+    ask turtle i [set xcor random(50) set ycor -1 * random(50)]
+    set i i + 1
   ]
 end
 @#$#@#$#@
