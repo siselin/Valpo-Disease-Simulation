@@ -1,5 +1,7 @@
 turtles-own[
   infected?
+  immune?
+  sick-timer
 ]
 patches-own[]
 
@@ -17,11 +19,12 @@ to setup
   clear-all
   create-turtles num-students
 
-  ask turtles [set color gray set infected? false]
+  ask turtles [become-susceptible]
 
   layout-circle turtles 10
 
   set-original-infection
+  set-original-immune
 
   set-roomates
   set-wings
@@ -36,6 +39,10 @@ end
 
 
 to go
+  ask turtles with [infected?] [
+    set sick-timer sick-timer + 1
+    if sick-timer >= check-frequency * 288 [ set sick-timer 0 ]
+  ]
   try-to-infect
   try-to-heal
 
@@ -84,23 +91,65 @@ end
 
 to set-original-infection
   let number-infected initial-percent-infected * num-students
-  ask n-of number-infected turtles [ set infected? true set color red]
+  ask n-of number-infected turtles [ become-infected ]
+end
+
+to set-original-immune
+  let number-immune initial-percent-immune * num-students
+  ask n-of number-immune turtles [ become-immune ]
+end
+
+to become-infected
+  set color red
+  set infected? true
+  set sick-timer 0
+end
+
+to become-susceptible
+  set infected? false
+  set immune? false
+  set color green
+end
+
+to become-immune
+  set infected? false
+  set immune? true
+  set color gray
+  ask my-links [ set color gray - 10 ]
 end
 
 to try-to-infect
+;  ask turtles with [infected?] [
+;    ask link-neighbors [
+;    ]
+;  ]
   ask turtles [
     if infected? [
       ask my-links [
-        if random-float 1 < ([contact-rate] of self) [ask both-ends [ set color red set infected? true ]]
+        if random-float 1 < ([contact-rate] of self) [
+          ask other-end [
+            if not immune? and not infected? [
+              become-infected
+            ]
+          ]
+        ]
       ]
     ]
   ]
 end
 
 to try-to-heal
-end
-
-to die-from-illness
+  ;10-15% die
+  ask turtles with [infected? and sick-timer = 0][
+    ;12% will die
+    ifelse random-float 1 > 0.12
+    [
+      ifelse random-float 1 > 0.5
+      [become-susceptible]
+      [become-immune]
+    ]
+    [die]
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -190,7 +239,7 @@ num-students
 num-students
 0
 1000
-19
+38
 1
 1
 NIL
@@ -205,7 +254,7 @@ initial-percent-infected
 initial-percent-infected
 0
 1
-0.12
+0.61
 .01
 1
 NIL
@@ -242,6 +291,36 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+23
+345
+195
+378
+initial-percent-immune
+initial-percent-immune
+0
+1
+0.2
+.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+21
+400
+193
+433
+check-frequency
+check-frequency
+0
+14
+7
+1
+1
+days
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
