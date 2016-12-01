@@ -26,7 +26,6 @@ to setup
   ]
 
 
-
   set-roomates
   set-wings
   set-classes
@@ -41,8 +40,6 @@ end
 
 
 to go
-
-
 
 
   tick
