@@ -1,7 +1,8 @@
 turtles-own[
   infected?
   immune?
-  sick-timer
+  sick-tick-counter
+  time-sick
   gender
 ]
 
@@ -22,8 +23,6 @@ to setup
   clear-all
   create-turtles num-students
 
-  ask turtles [become-susceptible]
-
   layout-circle turtles 10
   ask turtles [
     ifelse random 2 = 0 [
@@ -31,6 +30,7 @@ to setup
       set gender "f"]
   ]
 
+  ask turtles [ become-susceptible ]
   set-original-infection
   set-original-immune
 
@@ -39,21 +39,17 @@ to setup
   set-classes
   set-relationships
 
-  ask roomies [
-    set contact-rate random-float 1
-    set color white]
-  ask classes [set contact-rate 0.5 * random-float 1]
+  set-contact-rates
+
   reset-ticks
 end
 
-
 to go
   ask turtles with [infected?] [
-    set sick-timer sick-timer + 1
-    if sick-timer >= check-frequency * 288 [ set sick-timer 0 ]
+    set sick-tick-counter sick-tick-counter + 1
+    if sick-tick-counter >= time-sick [ try-to-heal ]
   ]
   try-to-infect
-  try-to-heal
 
   tick
 end
@@ -96,78 +92,6 @@ to set-wings
 end
 
 to set-classes
-
-;  while [count turtles with [ my-classes empty?] > 0]
-;[  let these n-of turtles with [my-classes empty?]
-;  ask these [
-;    create-roomies-with other these
-;  ]]
-
-end
-
-;infection mechanics
-
-to set-original-infection
-  let number-infected initial-percent-infected * num-students
-  ask n-of number-infected turtles [ become-infected ]
-end
-
-to set-original-immune
-  let number-immune initial-percent-immune * num-students
-  ask n-of number-immune turtles [ become-immune ]
-end
-
-to become-infected
-  set color red
-  set infected? true
-  set sick-timer 0
-end
-
-to become-susceptible
-  set infected? false
-  set immune? false
-  set color green
-end
-
-to become-immune
-  set infected? false
-  set immune? true
-  set color gray
-  ask my-links [ set color gray - 10 ]
-end
-
-to try-to-infect
-;  ask turtles with [infected?] [
-;    ask link-neighbors [
-;    ]
-;  ]
-  ask turtles [
-    if infected? [
-      ask my-links [
-        if random-float 1 < ([contact-rate] of self) [
-          ask other-end [
-            if not immune? and not infected? [
-              become-infected
-            ]
-          ]
-        ]
-      ]
-    ]
-  ]
-end
-
-to try-to-heal
-  ;10-15% die
-  ask turtles with [infected? and sick-timer = 0][
-    ;12% will die
-    ifelse random-float 1 > 0.12
-    [
-      ifelse random-float 1 > 0.5
-      [become-susceptible]
-      [become-immune]
-    ]
-    [die]
-  ]
 end
 
 to set-relationships
@@ -184,6 +108,72 @@ to set-relationships
     [ create-relationship-with one-of females with [count my-relationships = 0]]
   ]
 end
+
+to set-contact-rates
+  ask roomies [ set contact-rate random-float 1 set color white]
+  ask classes [ set contact-rate 0.5 * random-float 1 set color 48]
+  ask wings [ set contact-rate random-float 1 set color 69]
+  ask relationships[ set contact-rate random-float 1 set color 18]
+end
+
+;********************start infection mechanics********************
+
+to set-original-infection
+  let number-infected initial-percent-infected * num-students
+  ask n-of number-infected turtles [ become-infected ]
+end
+
+to set-original-immune
+  let number-immune initial-percent-immune * num-students
+  ask n-of number-immune turtles [ become-immune ]
+end
+
+;used in turtle context
+to become-infected
+  set color red
+  set infected? true
+  set sick-tick-counter 0
+  set time-sick 288 * random-exponential 8
+end
+
+;used in turtle context
+to become-susceptible
+  set infected? false
+  set immune? false
+  set color green
+end
+
+;used in turtle context
+to become-immune
+  set infected? false
+  set immune? true
+  set color gray
+  ask my-links [ set color gray - 4 ]
+end
+
+to try-to-infect
+  ask turtles with [infected?] [
+    ask my-links [
+      if random-float 1 < ([contact-rate] of self) [
+        ask other-end [
+          if not immune? and not infected? [
+            become-infected
+  ]]]]]
+end
+
+;used in turtle context
+to try-to-heal
+  ;10-15% die from bacterial (might be different now that we're looking at viral)
+  ifelse random-float 1 > 0.12
+  [
+    ifelse random-float 1 > 0.5
+    [ become-susceptible ]
+    [ become-immune ]
+  ]
+  [die]
+end
+
+;********************end infection mechanics********************
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -272,7 +262,7 @@ num-students
 num-students
 0
 1000
-490
+561
 1
 1
 NIL
@@ -302,7 +292,7 @@ num-wings
 num-wings
 2
 30
-11
+9
 1
 1
 NIL
@@ -341,21 +331,6 @@ NIL
 HORIZONTAL
 
 SLIDER
-21
-400
-193
-433
-check-frequency
-check-frequency
-0
-14
-7
-1
-1
-days
-HORIZONTAL
-
-SLIDER
 19
 231
 191
@@ -369,6 +344,26 @@ relationship-ratio
 1
 %
 HORIZONTAL
+
+PLOT
+680
+49
+945
+199
+plot
+ticks
+turtles
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"immune" 1.0 0 -7500403 true "" "plot count turtles with [not infected? and immune?]"
+"susceptible" 1.0 0 -10899396 true "" "plot count turtles with [not infected?]"
+"infected" 1.0 0 -2674135 true "" "plot count turtles with [infected?]"
 
 @#$#@#$#@
 ## WHAT IS IT?
