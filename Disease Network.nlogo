@@ -10,7 +10,7 @@ undirected-link-breed [relationships relationship]
 roomies-own [wing-index]
 links-own [contact-rate]
 
-globals [class-list period] ;period: 1..14 if class, 1..8 are MWF, 9..14 are TR, 0 if no class
+globals [class-list period] ;period: 0..13 if class, 0..7 are MWF, 8..13 are TR, -1 if no class
 
 to setup
   clear-all
@@ -19,7 +19,7 @@ to setup
 
   layout-circle turtles 50
 
-  set period 0
+  set period -1
 
   ask turtles [
     set class-count [0 0 0 0 0 0 0 0 0 0 0 0 0 0];Marks which periods that they have class
@@ -150,36 +150,55 @@ end
 to connect
   let i 0
   let j 0
+  let k 0; i^2 = j^2 = k^2 = ijk = -1
+  let first-turtle -1
+  let second-turtle -1
   let dist []
-  let temp []
-  while [i < 20] [
-    set j i + 1
-    while[j < 20] [
-      set temp lput sqrt(([xcor] of turtle i - [xcor] of turtle j) * ([xcor] of turtle i - [xcor] of turtle j) + ([ycor] of turtle i - [ycor] of turtle j) * ([ycor] of turtle i - [ycor] of turtle j)) temp
-      set temp lput i temp
-      set temp lput j temp
-      set dist lput temp dist
-      set temp []
-      set j j + 1
+  let temp [];/*
+  while [k < length item period class-list] [
+    set dist []
+    set temp [];Probably not needed
+    set i 0
+    while [i < length item k (item period class-list)] [
+      set j i + 1
+      while[j < length item k (item period class-list)] [
+        set first-turtle (item i (item k (item period class-list)))
+        set second-turtle (item j (item k (item period class-list)))
+        set temp lput sqrt(([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) * ([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) + ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle) * ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle)) temp
+        set temp lput first-turtle temp
+        set temp lput second-turtle temp
+        set dist lput temp dist
+        set temp []
+        set j j + 1
+      ]
+      set i i + 1
     ]
-    set i i + 1
-  ]
-  set dist sort-by [first  ?1 < first ?2] dist
-  show length dist
-  set i 0
-  while [i < 2 * 20] [  ;Uniform random between 1.5 and 3 times class size?
-    ask turtle (item 1 (item i dist)) [create-class-with turtle (item 2 (item i dist))]
-    set i i + 1
-  ]
+    set dist sort-by [first  ?1 < first ?2] dist
+    show length dist
+    set i 0
+    while [i < ((random(3) + 3) / 2) * length item k (item period class-list)] [  ;Uniform random between 1.5 and 3 times class size?
+      ask turtle (item 1 (item i dist)) [create-class-with turtle (item 2 (item i dist))]
+      set i i + 1
+    ]
+    set k k + 1
+  ];*/
+
 end
 
 to move-to-class
   ;random-seed 6707884
+  ask turtles [set xcor 255 set ycor -127]
+  set period 0; TEMP
   clear-links
+  let j 0
   let i 0
-  while [i < 20] [
-    ask turtle i [set xcor random(50) set ycor -1 * random(50)]
-    set i i + 1
+  while [j < length item period class-list] [
+    set i 0
+    while [i < length item j (item period class-list)] [
+      ask turtle (item i (item j (item period class-list))) [set xcor (random(16) + (j mod 16) * 16) set ycor -1 * (random(12) + (floor (j / 16)) * 12)]
+      set i i + 1
+    ]
+    set j j + 1
   ]
 end
 @#$#@#$#@
@@ -345,7 +364,7 @@ BUTTON
 387
 97
 420
-C & M
+M & C
 move-to-class\nconnect
 NIL
 1
