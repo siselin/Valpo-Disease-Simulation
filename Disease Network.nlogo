@@ -14,6 +14,7 @@ globals [class-list period] ;period: 1..14 if class, 1..8 are MWF, 9..14 are TR,
 
 to setup
   clear-all
+  random-seed 4646766
   create-turtles num-students;3200
 
   layout-circle turtles 50
@@ -29,6 +30,7 @@ to setup
       set color red]
   ]
 
+  schedule
 
   ;set-roomates
   ;set-wings
@@ -130,13 +132,9 @@ to schedule
       set a-class []
       while[j < class-size] [
         set rand-stu random num-students
-        while[sum [class-count] of turtle rand-stu > 6] [
-          while[item i [class-count] of turtle rand-stu = 1] [
-            set rand-stu random num-students
-            show item i [class-count] of turtle rand-stu
-          ]
+        while[(sum [class-count] of turtle rand-stu > 5) or (item i [class-count] of turtle rand-stu > 0)] [
+          set rand-stu random num-students
         ]
-        show "-"
         ask turtle rand-stu [set class-count replace-item i class-count 1]
         set a-class lput rand-stu a-class
         set j j + 1
@@ -149,12 +147,7 @@ to schedule
   show class-list
 end
 
-to select-students
-
-end
-
 to connect
-  select-students
   let i 0
   let j 0
   let dist []
@@ -194,7 +187,7 @@ GRAPHICS-WINDOW
 210
 10
 1756
-941
+809
 -1
 -1
 6.0
@@ -209,7 +202,7 @@ GRAPHICS-WINDOW
 1
 0
 255
--149
+-127
 0
 0
 0
