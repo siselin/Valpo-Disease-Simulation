@@ -1,4 +1,4 @@
-turtles-own[gender]
+turtles-own[gender class-count]
 patches-own[]
 
 undirected-link-breed [roomies roomie]
@@ -10,14 +10,18 @@ undirected-link-breed [relationships relationship]
 roomies-own [wing-index]
 links-own [contact-rate]
 
-globals []
+globals [class-list period] ;period: 1..14 if class, 1..8 are MWF, 9..14 are TR, 0 if no class
 
 to setup
   clear-all
   create-turtles num-students;3200
 
-  layout-circle turtles 10
+  layout-circle turtles 50
+
+  set period 0
+
   ask turtles [
+    set class-count [0 0 0 0 0 0 0 0 0 0 0 0 0 0];Marks which periods that they have class
     ifelse random 2 = 0 [
       set gender "m"
       set color blue] [
@@ -26,22 +30,21 @@ to setup
   ]
 
 
-  set-roomates
-  set-wings
-  set-classes
-  set-relationships
+  ;set-roomates
+  ;set-wings
+  ;set-classes
+  ;set-relationships
 
-  ask roomies [
-    set contact-rate random-float 1
-    set color white]
-  ask classes [set contact-rate 0.5 * random-float 1]
+ ; ask roomies [
+ ;   set contact-rate random-float 1
+ ;   set color white]
+ ; ask classes [set contact-rate 0.5 * random-float 1]
   reset-ticks
 end
 
+;I have a 256X150 area.  I can do 16 cols, each 16 wide and 12 long with 4 rows giving me 64 classrooms
 
 to go
-
-
   tick
 end
 
@@ -107,7 +110,51 @@ to set-relationships
   ]
 end
 
+to schedule
+  set class-list []
+  let tot floor (num-students * 5 / 14) ;each student averages five classes, there are 14 time slots
+  let day []
+  let a-class [] ;A single class
+  let class-size 0
+  let i 0
+  let j 0
+  let running-tot 0
+  let rand-stu 0
+  while[i < 14] [
+    set day []
+    set running-tot 0
+    while[running-tot < tot] [
+      set class-size ((ceiling random-gamma 3 0.16666666666) + 3)
+      set running-tot running-tot + class-size
+      set j 0
+      set a-class []
+      while[j < class-size] [
+        set rand-stu random num-students
+        while[sum [class-count] of turtle rand-stu > 6] [
+          while[item i [class-count] of turtle rand-stu = 1] [
+            set rand-stu random num-students
+            show item i [class-count] of turtle rand-stu
+          ]
+        ]
+        show "-"
+        ask turtle rand-stu [set class-count replace-item i class-count 1]
+        set a-class lput rand-stu a-class
+        set j j + 1
+      ]
+      set day lput a-class day
+    ]
+    set class-list lput day class-list
+    set i i + 1
+  ]
+  show class-list
+end
+
+to select-students
+
+end
+
 to connect
+  select-students
   let i 0
   let j 0
   let dist []
@@ -146,11 +193,11 @@ end
 GRAPHICS-WINDOW
 210
 10
-649
-470
-16
-16
-13.0
+1756
+941
+-1
+-1
+6.0
 1
 10
 1
@@ -160,15 +207,15 @@ GRAPHICS-WINDOW
 0
 0
 1
--16
-16
--16
-16
+0
+255
+-149
+0
 0
 0
 1
 ticks
-30.0
+60.0
 
 BUTTON
 20
@@ -229,8 +276,8 @@ SLIDER
 num-students
 num-students
 0
-1000
-1000
+4000
+3210
 1
 1
 NIL
@@ -299,6 +346,23 @@ relationship-ratio
 1
 %
 HORIZONTAL
+
+BUTTON
+22
+387
+97
+420
+C & M
+move-to-class\nconnect
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
