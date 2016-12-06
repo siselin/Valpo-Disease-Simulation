@@ -1,4 +1,11 @@
-turtles-own[gender]
+turtles-own[
+  infected?
+  immune?
+  sick-tick-counter
+  time-sick
+  gender
+]
+
 patches-own[]
 
 undirected-link-breed [roomies roomie]
@@ -19,28 +26,30 @@ to setup
   layout-circle turtles 10
   ask turtles [
     ifelse random 2 = 0 [
-      set gender "m"
-      set color blue] [
-      set gender "f"
-      set color red]
+      set gender "m"] [
+      set gender "f"]
   ]
 
+  ask turtles [ become-susceptible ]
+  set-original-infection
+  set-original-immune
 
   set-roomates
   set-wings
   set-classes
   set-relationships
 
-  ask roomies [
-    set contact-rate random-float 1
-    set color white]
-  ask classes [set contact-rate 0.5 * random-float 1]
+  set-contact-rates
+
   reset-ticks
 end
 
-
 to go
-
+  ask turtles with [infected?] [
+    set sick-tick-counter sick-tick-counter + 1
+    if sick-tick-counter >= time-sick [ try-to-heal ]
+  ]
+  try-to-infect
 
   tick
 end
@@ -83,13 +92,6 @@ to set-wings
 end
 
 to set-classes
-
-;  while [count turtles with [ my-classes empty?] > 0]
-;[  let these n-of turtles with [my-classes empty?]
-;  ask these [
-;    create-roomies-with other these
-;  ]]
-
 end
 
 to set-relationships
@@ -106,6 +108,72 @@ to set-relationships
     [ create-relationship-with one-of females with [count my-relationships = 0]]
   ]
 end
+
+to set-contact-rates
+  ask roomies [ set contact-rate random-float 1 set color white]
+  ask classes [ set contact-rate 0.5 * random-float 1 set color 48]
+  ask wings [ set contact-rate random-float 1 set color 69]
+  ask relationships[ set contact-rate random-float 1 set color 18]
+end
+
+;********************start infection mechanics********************
+
+to set-original-infection
+  let number-infected initial-percent-infected * num-students
+  ask n-of number-infected turtles [ become-infected ]
+end
+
+to set-original-immune
+  let number-immune initial-percent-immune * num-students
+  ask n-of number-immune turtles [ become-immune ]
+end
+
+;used in turtle context
+to become-infected
+  set color red
+  set infected? true
+  set sick-tick-counter 0
+  set time-sick 288 * random-exponential 8
+end
+
+;used in turtle context
+to become-susceptible
+  set infected? false
+  set immune? false
+  set color green
+end
+
+;used in turtle context
+to become-immune
+  set infected? false
+  set immune? true
+  set color gray
+  ask my-links [ set color gray - 4 ]
+end
+
+to try-to-infect
+  ask turtles with [infected?] [
+    ask my-links [
+      if random-float 1 < ([contact-rate] of self) [
+        ask other-end [
+          if not immune? and not infected? [
+            become-infected
+  ]]]]]
+end
+
+;used in turtle context
+to try-to-heal
+  ;10-15% die from bacterial (might be different now that we're looking at viral)
+  ifelse random-float 1 > 0.12
+  [
+    ifelse random-float 1 > 0.5
+    [ become-susceptible ]
+    [ become-immune ]
+  ]
+  [die]
+end
+
+;********************end infection mechanics********************
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -194,10 +262,25 @@ num-students
 num-students
 0
 1000
-1000
+561
 1
 1
 NIL
+HORIZONTAL
+
+SLIDER
+17
+116
+196
+149
+initial-percent-infected
+initial-percent-infected
+0
+1
+0.2
+0.01
+1
+1
 HORIZONTAL
 
 SLIDER
@@ -209,7 +292,7 @@ num-wings
 num-wings
 2
 30
-30
+9
 1
 1
 NIL
@@ -232,28 +315,26 @@ NIL
 NIL
 1
 
-BUTTON
-27
-323
-183
-356
-Rommate Links On/Off
-ask roomies [set hidden? ( not hidden?)]
-NIL
+SLIDER
+23
+345
+195
+378
+initial-percent-immune
+initial-percent-immune
+0
 1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
+0.2
+.01
 1
+NIL
+HORIZONTAL
 
 SLIDER
-20
-124
-192
-157
+19
+231
+191
+264
 relationship-ratio
 relationship-ratio
 0
@@ -263,6 +344,26 @@ relationship-ratio
 1
 %
 HORIZONTAL
+
+PLOT
+680
+49
+945
+199
+plot
+ticks
+turtles
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"immune" 1.0 0 -7500403 true "" "plot count turtles with [not infected? and immune?]"
+"susceptible" 1.0 0 -10899396 true "" "plot count turtles with [not infected?]"
+"infected" 1.0 0 -2674135 true "" "plot count turtles with [infected?]"
 
 @#$#@#$#@
 ## WHAT IS IT?
