@@ -164,7 +164,7 @@ to connect
       while[j < length item k (item period class-list)] [
         set first-turtle (item i (item k (item period class-list)))
         set second-turtle (item j (item k (item period class-list)))
-        set temp lput sqrt(([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) * ([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) + ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle) * ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle)) temp
+        set temp lput sqrt(([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) ^ 2 + ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle) ^ 2) temp
         set temp lput first-turtle temp
         set temp lput second-turtle temp
         set dist lput temp dist
