@@ -1,7 +1,7 @@
 
 turtles-own[
-gender
- class-count
+  gender
+  class-count
   infected?
   immune?
   sick-tick-counter
@@ -45,15 +45,14 @@ to setup
   set-original-immune
 
 
-  ;set-roomates
-  ;set-wings
-  ;set-classes
-  ;set-relationships
+  set-roomates
+  set-wings
+  set-relationships
 
- ; ask roomies [
- ;   set contact-rate random-float 1
- ;   set color white]
- ; ask classes [set contact-rate 0.5 * random-float 1]
+  ask roomies [
+    set contact-rate random-float 1
+    set color white]
+  ask classes [set contact-rate 0.5 * random-float 1]
   set-contact-rates
   reset-ticks
 
@@ -70,6 +69,8 @@ to go
 
   tick
 end
+
+;********************start setting up connections********************
 
 to set-roomates
   let males turtles with [gender = "m"]
@@ -108,9 +109,6 @@ to set-wings
   ]
 end
 
-to set-classes
-end
-
 to set-relationships
   let males turtles with [gender = "m"]
   let females turtles with [gender = "f"]
@@ -126,6 +124,7 @@ to set-relationships
   ]
 end
 
+;********************end setting up connections********************
 
 to schedule
   set class-list []
@@ -282,7 +281,6 @@ to try-to-heal
 end
 
 ;********************end infection mechanics********************
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -454,7 +452,6 @@ relationship-ratio
 %
 HORIZONTAL
 
-
 BUTTON
 22
 387
@@ -491,7 +488,6 @@ PENS
 "immune" 1.0 0 -7500403 true "" "plot count turtles with [not infected? and immune?]"
 "susceptible" 1.0 0 -10899396 true "" "plot count turtles with [not infected?]"
 "infected" 1.0 0 -2674135 true "" "plot count turtles with [infected?]"
-
 
 @#$#@#$#@
 ## WHAT IS IT?
