@@ -187,7 +187,11 @@ to connect
     set dist sort-by [first  ?1 < first ?2] dist
     show length dist
     set i 0
-    while [i < ((random(3) + 3) / 2) * length item k (item period class-list)] [  ;Uniform random between 1.5 and 3 times class size?
+    let class-size length item k (item period class-list)
+    let lesser 0
+    let rand ((random(3) + 3) / 2) * class-size
+    ifelse (rand < (class-size ^ 2 - class-size) / 2) [ set lesser  rand   ] [set lesser  (class-size ^ 2 - class-size) / 2]
+    while [i < lesser] [  ;Uniform random between 1.5 and 3 times class size?
       ask turtle (item 1 (item i dist)) [create-class-with turtle (item 2 (item i dist))]
       set i i + 1
     ]
@@ -290,9 +294,9 @@ end
 ;********************end infection mechanics********************
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+200
 10
-1164
+1154
 513
 -1
 -1
@@ -412,23 +416,6 @@ num-wings
 NIL
 HORIZONTAL
 
-BUTTON
-23
-274
-155
-307
-Wing Links On/Off
-ask wings [ set hidden? not hidden?]
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
 SLIDER
 23
 345
@@ -477,10 +464,10 @@ NIL
 1
 
 PLOT
-680
-49
-945
-199
+1143
+212
+1408
+362
 plot
 ticks
 turtles
