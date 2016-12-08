@@ -31,7 +31,7 @@ to setup
   set period -1
 
   ask turtles [
-    set class-count [0 0 0 0 0 0 0 0 0 0 0 0 0 0];Marks which periods that they have class
+    set class-count [0 0 0 0 0 0 0 0 0 0 0 0 0 0] ;Marks which periods that they have class
     ifelse random 2 = 0 [
       set gender "m"] [
       set gender "f"]
@@ -49,10 +49,6 @@ to setup
   set-wings
   set-relationships
 
-  ask roomies [
-    set contact-rate random-float 1
-    set color white]
-  ask classes [set contact-rate 0.5 * random-float 1]
   set-contact-rates
   reset-ticks
 
@@ -61,6 +57,7 @@ to setup
 end
 
 to go
+  if (count turtles with [infected?] <= 0) [ stop]
   ask turtles with [infected?] [
     set sick-tick-counter sick-tick-counter + 1
     if sick-tick-counter >= time-sick [ try-to-heal ]
@@ -178,7 +175,7 @@ to connect
       while[j < length item k (item period class-list)] [
         set first-turtle (item i (item k (item period class-list)))
         set second-turtle (item j (item k (item period class-list)))
-        set temp lput sqrt(([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) * ([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) + ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle) * ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle)) temp
+        set temp lput sqrt(([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) ^ 2 + ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle) ^ 2) temp
         set temp lput first-turtle temp
         set temp lput second-turtle temp
         set dist lput temp dist
@@ -201,9 +198,10 @@ end
 
 to move-to-class
   ;random-seed 6707884
-  ask turtles [set xcor 255 set ycor -127]
+  ask turtles [set xcor max-pxcor - 1
+     set ycor min-pycor + 1]
   set period 0; TEMP
-  clear-links
+  hide-links
   let j 0
   let i 0
   while [j < length item period class-list] [
@@ -216,10 +214,16 @@ to move-to-class
   ]
 end
 
+to hide-links
+  ask links [
+    set hidden? true]
+end
+
+
 to set-contact-rates
   ask roomies [ set contact-rate random-float 1 set color white]
   ask classes [ set contact-rate 0.5 * random-float 1 set color 48]
-  ask wings [ set contact-rate random-float 1 set color 69]
+  ask wings [ set contact-rate 0.25 * random-float 1 set color 69]
   ask relationships[ set contact-rate random-float 1 set color 18]
 end
 
@@ -240,7 +244,7 @@ to become-infected
   set color red
   set infected? true
   set sick-tick-counter 0
-  set time-sick 288 * random-exponential 8
+  set time-sick 288 * random-exponential 6
 end
 
 ;used in turtle context
@@ -255,13 +259,14 @@ to become-immune
   set infected? false
   set immune? true
   set color gray
-  ask my-links [ set color gray - 4 ]
+  ask my-links [ set color gray - 4
+    die]
 end
 
 to try-to-infect
   ask turtles with [infected?] [
-    ask my-links [
-      if random-float 1 < ([contact-rate] of self) [
+    ask my-links with [ not hidden?] [
+      if random-float 1 < ([contact-rate] of self) / 1000 [
         ask other-end [
           if not immune? and not infected? [
             become-infected
@@ -275,7 +280,9 @@ to try-to-heal
   [
     ifelse random-float 1 > 0.5
     [ become-susceptible ]
-    [ become-immune ]
+    [
+      become-immune
+      ]
   ]
   [die]
 end
@@ -285,11 +292,11 @@ end
 GRAPHICS-WINDOW
 210
 10
-1756
-809
+1164
+513
 -1
 -1
-6.0
+3.69
 1
 10
 1
@@ -369,7 +376,7 @@ num-students
 num-students
 0
 4000
-3210
+3185
 1
 1
 NIL
@@ -397,9 +404,9 @@ SLIDER
 228
 num-wings
 num-wings
-2
 30
-9
+100
+60
 1
 1
 NIL
@@ -486,8 +493,19 @@ false
 "" ""
 PENS
 "immune" 1.0 0 -7500403 true "" "plot count turtles with [not infected? and immune?]"
-"susceptible" 1.0 0 -10899396 true "" "plot count turtles with [not infected?]"
+"susceptible" 1.0 0 -10899396 true "" "plot count turtles with [not infected? and not immune?]"
 "infected" 1.0 0 -2674135 true "" "plot count turtles with [infected?]"
+
+MONITOR
+1219
+125
+1392
+170
+NIL
+count turtles with [infected?]
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
