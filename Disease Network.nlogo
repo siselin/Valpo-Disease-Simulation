@@ -1,9 +1,11 @@
+
 turtles-own[
+gender
+ class-count
   infected?
   immune?
   sick-tick-counter
   time-sick
-  gender
 ]
 
 patches-own[]
@@ -17,31 +19,46 @@ undirected-link-breed [relationships relationship]
 roomies-own [wing-index]
 links-own [contact-rate]
 
-globals []
+globals [class-list period] ;period: 0..13 if class, 0..7 are MWF, 8..13 are TR, -1 if no class
 
 to setup
   clear-all
-  create-turtles num-students
+  random-seed 4646766
+  create-turtles num-students;3200
 
-  layout-circle turtles 10
+  layout-circle turtles 50
+
+  set period -1
+
   ask turtles [
+    set class-count [0 0 0 0 0 0 0 0 0 0 0 0 0 0];Marks which periods that they have class
     ifelse random 2 = 0 [
       set gender "m"] [
       set gender "f"]
   ]
 
+
+  schedule
+
   ask turtles [ become-susceptible ]
   set-original-infection
   set-original-immune
 
-  set-roomates
-  set-wings
-  set-classes
-  set-relationships
 
+  ;set-roomates
+  ;set-wings
+  ;set-classes
+  ;set-relationships
+
+ ; ask roomies [
+ ;   set contact-rate random-float 1
+ ;   set color white]
+ ; ask classes [set contact-rate 0.5 * random-float 1]
   set-contact-rates
-
   reset-ticks
+
+;I have a 256X150 area.  I can do 16 cols, each 16 wide and 12 long with 4 rows giving me 64 classrooms
+
 end
 
 to go
@@ -106,6 +123,97 @@ to set-relationships
   [
     ask one-of males with [count my-relationships = 0]
     [ create-relationship-with one-of females with [count my-relationships = 0]]
+  ]
+end
+
+
+to schedule
+  set class-list []
+  let tot floor (num-students * 5 / 14) ;each student averages five classes, there are 14 time slots
+  let day []
+  let a-class [] ;A single class
+  let class-size 0
+  let i 0
+  let j 0
+  let running-tot 0
+  let rand-stu 0
+  while[i < 14] [
+    set day []
+    set running-tot 0
+    while[running-tot < tot] [
+      set class-size ((ceiling random-gamma 3 0.16666666666) + 3)
+      set running-tot running-tot + class-size
+      set j 0
+      set a-class []
+      while[j < class-size] [
+        set rand-stu random num-students
+        while[(sum [class-count] of turtle rand-stu > 5) or (item i [class-count] of turtle rand-stu > 0)] [
+          set rand-stu random num-students
+        ]
+        ask turtle rand-stu [set class-count replace-item i class-count 1]
+        set a-class lput rand-stu a-class
+        set j j + 1
+      ]
+      set day lput a-class day
+    ]
+    set class-list lput day class-list
+    set i i + 1
+  ]
+  show class-list
+end
+
+to connect
+  let i 0
+  let j 0
+  let k 0; i^2 = j^2 = k^2 = ijk = -1
+  let first-turtle -1
+  let second-turtle -1
+  let dist []
+  let temp [];/*
+  while [k < length item period class-list] [
+    set dist []
+    set temp [];Probably not needed
+    set i 0
+    while [i < length item k (item period class-list)] [
+      set j i + 1
+      while[j < length item k (item period class-list)] [
+        set first-turtle (item i (item k (item period class-list)))
+        set second-turtle (item j (item k (item period class-list)))
+        set temp lput sqrt(([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) * ([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) + ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle) * ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle)) temp
+        set temp lput first-turtle temp
+        set temp lput second-turtle temp
+        set dist lput temp dist
+        set temp []
+        set j j + 1
+      ]
+      set i i + 1
+    ]
+    set dist sort-by [first  ?1 < first ?2] dist
+    show length dist
+    set i 0
+    while [i < ((random(3) + 3) / 2) * length item k (item period class-list)] [  ;Uniform random between 1.5 and 3 times class size?
+      ask turtle (item 1 (item i dist)) [create-class-with turtle (item 2 (item i dist))]
+      set i i + 1
+    ]
+    set k k + 1
+  ];*/
+
+end
+
+to move-to-class
+  ;random-seed 6707884
+  ask turtles [set xcor 255 set ycor -127]
+  set period 0; TEMP
+  clear-links
+  let j 0
+  let i 0
+  while [j < length item period class-list] [
+    set i 0
+    while [i < length item j (item period class-list)] [
+      ask turtle (item i (item j (item period class-list))) [set xcor (random(16) + (j mod 16) * 16) set ycor -1 * (random(12) + (floor (j / 16)) * 12)]
+      set i i + 1
+    ]
+    set j j + 1
   ]
 end
 
@@ -174,15 +282,16 @@ to try-to-heal
 end
 
 ;********************end infection mechanics********************
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
 10
-649
-470
-16
-16
-13.0
+1756
+809
+-1
+-1
+6.0
 1
 10
 1
@@ -192,15 +301,15 @@ GRAPHICS-WINDOW
 0
 0
 1
--16
-16
--16
-16
+0
+255
+-127
+0
 0
 0
 1
 ticks
-30.0
+60.0
 
 BUTTON
 20
@@ -261,8 +370,8 @@ SLIDER
 num-students
 num-students
 0
-1000
-561
+4000
+3210
 1
 1
 NIL
@@ -345,6 +454,24 @@ relationship-ratio
 %
 HORIZONTAL
 
+
+BUTTON
+22
+387
+97
+420
+M & C
+move-to-class\nconnect
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
 PLOT
 680
 49
@@ -364,6 +491,7 @@ PENS
 "immune" 1.0 0 -7500403 true "" "plot count turtles with [not infected? and immune?]"
 "susceptible" 1.0 0 -10899396 true "" "plot count turtles with [not infected?]"
 "infected" 1.0 0 -2674135 true "" "plot count turtles with [infected?]"
+
 
 @#$#@#$#@
 ## WHAT IS IT?
