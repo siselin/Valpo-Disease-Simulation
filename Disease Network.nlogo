@@ -19,7 +19,11 @@ undirected-link-breed [relationships relationship]
 roomies-own [wing-index]
 links-own [contact-rate]
 
-globals [class-list period] ;period: 0..13 if class, 0..7 are MWF, 8..13 are TR, -1 if no class
+globals [
+  class-list
+  period  ;period: 0..13 if class, 0..7 are MWF, 8..13 are TR, -1 if no class
+  timestep ;the amount of time in minutes elapsed each timestep
+  ]
 
 to setup
   clear-all
@@ -58,6 +62,9 @@ end
 
 to go
   if (count turtles with [infected?] <= 0) [ stop]
+
+  move-around
+
   ask turtles with [infected?] [
     set sick-tick-counter sick-tick-counter + 1
     if sick-tick-counter >= time-sick [ try-to-heal ]
@@ -221,8 +228,32 @@ end
 to hide-links
   ask links [
     set hidden? true]
+  ask classes [die]
 end
 
+to move-around
+  ifelse (ticks mod (10080 / timestep) >= (7200 / timestep))
+  [ ;weekend
+
+  ]
+  [ ;weekday
+    ifelse ((ticks mod (10080 / timestep) / (1440 / timestep)) mod 2 = 0)
+    [ ;MWF
+      ifelse (ticks mod (1440 / timestep) >= 480 / timestep)
+      [
+
+      ]
+      [
+
+      ]
+    ]
+    [ ;TR
+
+    ]
+  ]
+
+
+end
 
 to set-contact-rates
   ask roomies [ set contact-rate random-float 1 set color white]
@@ -263,7 +294,7 @@ to become-immune
   set infected? false
   set immune? true
   set color gray
-  ask my-links [ set color gray - 4
+  ask my-links [; set color gray - 4
     die]
 end
 
