@@ -33,6 +33,7 @@ to setup
   layout-circle turtles 50
 
   set period -1
+  set timestep 5
 
   ask turtles [
     set class-count [0 0 0 0 0 0 0 0 0 0 0 0 0 0] ;Marks which periods that they have class
@@ -166,6 +167,7 @@ to schedule
 end
 
 to connect
+  if (period > -1)[
   let i 0
   let j 0
   let k 0; i^2 = j^2 = k^2 = ijk = -1
@@ -192,7 +194,7 @@ to connect
       set i i + 1
     ]
     set dist sort-by [first  ?1 < first ?2] dist
-    show length dist
+;    show length dist
     set i 0
     let class-size length item k (item period class-list)
     let lesser 0
@@ -204,24 +206,27 @@ to connect
     ]
     set k k + 1
   ];*/
-
+  ]
 end
 
 to move-to-class
   ;random-seed 6707884
+  if (period > -1)[
   ask turtles [set xcor max-pxcor - 1
      set ycor min-pycor + 1]
-  set period 0; TEMP
+;  set period 0; TEMP
   hide-links
   let j 0
   let i 0
   while [j < length item period class-list] [
     set i 0
     while [i < length item j (item period class-list)] [
-      ask turtle (item i (item j (item period class-list))) [set xcor (random(16) + (j mod 16) * 16) set ycor -1 * (random(12) + (floor (j / 16)) * 12)]
+      if (not (turtle (item i (item j (item period class-list))) = nobody))[
+      ask turtle (item i (item j (item period class-list))) [set xcor (random(16) + (j mod 16) * 16) set ycor -1 * (random(12) + (floor (j / 16)) * 12)]]
       set i i + 1
     ]
     set j j + 1
+  ]
   ]
 end
 
@@ -237,18 +242,74 @@ to move-around
 
   ]
   [ ;weekday
-    ifelse ((ticks mod (10080 / timestep) / (1440 / timestep)) mod 2 = 0)
+    let pre-period period
+    ifelse ( (floor (ticks mod (10080 / timestep) / (1440 / timestep))) mod 2 = 0)
     [ ;MWF
-      ifelse (ticks mod (1440 / timestep) >= 480 / timestep)
+      if (ticks mod (1440 / timestep) = 480 / timestep); 8:00 am
       [
-
+        set period 0
       ]
+      if (ticks mod (1440 / timestep) = 540 / timestep); 9:00 am
       [
-
+        set period 1
       ]
+      if (ticks mod (1440 / timestep) = 630 / timestep); 10:30 am
+      [
+        set period 2
+      ]
+      if (ticks mod (1440 / timestep) = 690 / timestep); 11:30 am
+      [
+        set period 3
+      ]
+      if (ticks mod (1440 / timestep) = 750 / timestep); 12:30 pm
+      [
+        set period 4
+      ]
+      if (ticks mod (1440 / timestep) = 810 / timestep); 1:30 pm
+      [
+        set period 5
+      ]
+      if (ticks mod (1440 / timestep) = 870 / timestep); 2:30 pm
+      [
+        set period 6
+      ]
+      if (ticks mod (1440 / timestep) = 930 / timestep); 3:30 pm
+      [
+        set period 7
+      ]
+      if not (pre-period = period)  [
+      move-to-class
+      connect]
     ]
     [ ;TR
-
+       if (ticks mod (1440 / timestep) = 480 / timestep); 8:00 am
+      [
+        set period 8
+      ]
+       if (ticks mod (1440 / timestep) = 540 / timestep); 9:00 am
+      [
+        set period 9
+      ]
+       if (ticks mod (1440 / timestep) = 630 / timestep); 10:00 am
+      [
+        set period 10
+      ]
+       if (ticks mod (1440 / timestep) = 720 / timestep); 12:00 pm
+      [
+        set period 11
+      ]
+      if (ticks mod (1440 / timestep) = 810 / timestep); 1:30 pm
+      [
+        set period 12
+      ]
+      if (ticks mod (1440 / timestep) = 900 / timestep); 3:00 pm
+      [
+        set period 13
+      ]
+      if not (pre-period = period)  [
+      move-to-class
+      connect
+      ]
     ]
   ]
 
@@ -319,7 +380,8 @@ to try-to-heal
       become-immune
       ]
   ]
-  [die]
+  [die
+    ]
 end
 
 ;********************end infection mechanics********************
@@ -495,10 +557,10 @@ NIL
 1
 
 PLOT
-1143
-212
-1408
-362
+1020
+191
+1285
+341
 plot
 ticks
 turtles
