@@ -6,6 +6,7 @@ turtles-own[
   immune?
   sick-tick-counter
   time-sick
+  bedtime
 ]
 
 patches-own[]
@@ -40,6 +41,9 @@ to setup
     ifelse random 2 = 0 [
       set gender "m"] [
       set gender "f"]
+    set bedtime random-normal 0 30
+    if bedtime < 0
+     [set bedtime floor ((1440 + bedtime) / timestep)]
   ]
 
 
@@ -70,7 +74,14 @@ to go
     set sick-tick-counter sick-tick-counter + 1
     if sick-tick-counter >= time-sick [ try-to-heal ]
   ]
-  try-to-infect
+
+  ifelse (period = -2)
+  [
+    mingle
+  ]
+  [
+    try-to-infect
+  ]
 
   tick
 end
@@ -163,7 +174,6 @@ to schedule
     set class-list lput day class-list
     set i i + 1
   ]
-  show class-list
 end
 
 to connect
@@ -243,6 +253,7 @@ to move-around
   ]
   [ ;weekday
     let pre-period period
+
     ifelse ( (floor (ticks mod (10080 / timestep) / (1440 / timestep))) mod 2 = 0)
     [ ;MWF
       if (ticks mod (1440 / timestep) = 480 / timestep); 8:00 am
@@ -277,9 +288,10 @@ to move-around
       [
         set period 7
       ]
-      if not (pre-period = period)  [
-      move-to-class
-      connect]
+      if (ticks mod (1440 / timestep) = 980 / timestep); 4:20 pm
+      [
+        set period -1
+      ]
     ]
     [ ;TR
        if (ticks mod (1440 / timestep) = 480 / timestep); 8:00 am
@@ -306,13 +318,45 @@ to move-around
       [
         set period 13
       ]
-      if not (pre-period = period)  [
-      move-to-class
-      connect
+      if (ticks mod (1440 / timestep) = 950 / timestep); 3:50 pm
+      [
+        set period -1
+      ]
+    ]
+    if not (pre-period = period)  [
+      ifelse (period = -1)
+      [
+        return-to-rooms
+      ]
+      [
+        move-to-class
+        connect
+      ]
+    ]
+    ask turtles
+    [
+      if (ticks mod (1440 / timestep) = bedtime)
+      [
+        ask my-links [ set hidden? true]
       ]
     ]
   ]
+end
 
+to mingle
+  hide-links
+  ask turtles with [infected? = false and immune? = false]
+  [
+    if random-float 1 < (count turtles with [infected?] / (10000 * count turtles))
+    [ become-infected]
+  ]
+end
+
+to return-to-rooms
+  hide-links
+  layout-circle turtles 50
+  ask roomies [set hidden? false]
+  ask wings [set hidden? false]
 
 end
 
