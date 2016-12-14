@@ -1,4 +1,12 @@
-turtles-own[gender class-count]
+turtles-own[
+  gender
+  class-count
+  infected?
+  immune?
+  sick-tick-counter
+  time-sick
+]
+
 patches-own[]
 
 undirected-link-breed [roomies roomie]
@@ -10,45 +18,77 @@ undirected-link-breed [relationships relationship]
 roomies-own [wing-index]
 links-own [contact-rate]
 
-globals [class-list period] ;period: 0..13 if class, 0..7 are MWF, 8..13 are TR, -1 if no class
+globals [
+  class-list; [period][class][student]
+  class-positions; [period][]
+  class-connections; [period][]
+  period  ;period: 0..13 if class, 0..7 are MWF, 8..13 are TR, -1 if no class
+  timestep ;the amount of time in minutes elapsed each timestep
+  ]
 
 to setup
   clear-all
   random-seed 4646766
   create-turtles num-students;3200
 
-  layout-circle turtles 50
-
-  set period -1
+  set period 0
+  set timestep 5
 
   ask turtles [
-    set class-count [0 0 0 0 0 0 0 0 0 0 0 0 0 0];Marks which periods that they have class
+    set class-count [0 0 0 0 0 0 0 0 0 0 0 0 0 0] ;Marks which periods that they have class
     ifelse random 2 = 0 [
-      set gender "m"
-      set color blue] [
-      set gender "f"
-      set color red]
+      set gender "m"] [
+      set gender "f"]
   ]
 
   schedule
 
-  ;set-roomates
-  ;set-wings
-  ;set-classes
-  ;set-relationships
+  set class-positions []
+  set class-connections []
 
- ; ask roomies [
- ;   set contact-rate random-float 1
- ;   set color white]
- ; ask classes [set contact-rate 0.5 * random-float 1]
+  while [period < 14] [
+    ask turtles [set xcor max-pxcor - 1 set ycor min-pycor + 1]
+    hide-links
+    determine-seating
+    build-connections
+    set period period + 1
+  ]
+
+  set period -1
+
+  layout-circle turtles 50
+
+  ask turtles [ become-susceptible ]
+  set-original-infection
+  set-original-immune
+
+
+  set-roomates
+  set-wings
+  set-relationships
+
+  set-contact-rates
   reset-ticks
-end
 
 ;I have a 256X150 area.  I can do 16 cols, each 16 wide and 12 long with 4 rows giving me 64 classrooms
 
+end
+
 to go
+  if (count turtles with [infected?] <= 0) [ stop]
+
+  move-around
+
+  ask turtles with [infected?] [
+    set sick-tick-counter sick-tick-counter + 1
+    if sick-tick-counter >= time-sick [ try-to-heal ]
+  ]
+  try-to-infect
+
   tick
 end
+
+;********************start setting up connections********************
 
 to set-roomates
   let males turtles with [gender = "m"]
@@ -87,16 +127,6 @@ to set-wings
   ]
 end
 
-to set-classes
-
-;  while [count turtles with [ my-classes empty?] > 0]
-;[  let these n-of turtles with [my-classes empty?]
-;  ask these [
-;    create-roomies-with other these
-;  ]]
-
-end
-
 to set-relationships
   let males turtles with [gender = "m"]
   let females turtles with [gender = "f"]
@@ -111,6 +141,8 @@ to set-relationships
     [ create-relationship-with one-of females with [count my-relationships = 0]]
   ]
 end
+
+;********************end setting up connections********************
 
 to schedule
   set class-list []
@@ -144,10 +176,9 @@ to schedule
     set class-list lput day class-list
     set i i + 1
   ]
-  show class-list
 end
 
-to connect
+to build-connections
   let i 0
   let j 0
   let k 0; i^2 = j^2 = k^2 = ijk = -1
@@ -155,9 +186,10 @@ to connect
   let second-turtle -1
   let dist []
   let temp [];/*
+  let temp2 []
   while [k < length item period class-list] [
     set dist []
-    set temp [];Probably not needed
+    set temp [];Probably  needed???
     set i 0
     while [i < length item k (item period class-list)] [
       set j i + 1
@@ -174,42 +206,213 @@ to connect
       set i i + 1
     ]
     set dist sort-by [first  ?1 < first ?2] dist
-    show length dist
     set i 0
-    while [i < ((random(3) + 3) / 2) * length item k (item period class-list)] [  ;Uniform random between 1.5 and 3 times class size?
-      ask turtle (item 1 (item i dist)) [create-class-with turtle (item 2 (item i dist))]
-      set i i + 1
+    let class-size length item k (item period class-list)
+    let lesser 0
+    let rand ((random(3) + 3) / 2) * class-size
+    ifelse (rand < (class-size ^ 2 - class-size) / 2) [ set lesser  rand   ] [set lesser  (class-size ^ 2 - class-size) / 2]
+    while [length dist > lesser] [
+      set dist but-last dist
     ]
+    foreach dist [set temp2 lput but-first ? temp2]
     set k k + 1
   ];*/
-
+  set class-connections lput temp2 class-connections
 end
 
-to move-to-class
-  ;random-seed 6707884
-  ask turtles [set xcor 255 set ycor -127]
-  set period 0; TEMP
-  clear-links
+to connect
+  foreach (item period class-connections) [ask turtle item 0 ? [create-class-with turtle item 1 ?]]
+end
+
+to determine-seating
   let j 0
   let i 0
+  let turtle-num -1
+  let position-list []
   while [j < length item period class-list] [
     set i 0
     while [i < length item j (item period class-list)] [
-      ask turtle (item i (item j (item period class-list))) [set xcor (random(16) + (j mod 16) * 16) set ycor -1 * (random(12) + (floor (j / 16)) * 12)]
+      set turtle-num (item i (item j (item period class-list)))
+      ask turtle turtle-num [set xcor (random(16) + (j mod 16) * 16) set ycor -1 * (random(12) + (floor (j / 16)) * 12)]
+      set position-list lput (list (turtle-num) ([xcor] of turtle turtle-num) ([ycor] of turtle turtle-num)) position-list
       set i i + 1
     ]
     set j j + 1
   ]
+  set class-positions lput position-list class-positions
 end
+
+to move-to-class
+  ask turtles [set xcor max-pxcor - 1
+    set ycor min-pycor + 1]
+  hide-links
+  foreach (item period class-positions) [ask turtle (item 0 ?) [set xcor item 1 ? set ycor item 2 ?]]
+end
+
+to hide-links
+  ask links [
+    set hidden? true]
+  ask classes [die]
+end
+
+to move-around
+  ifelse (ticks mod (10080 / timestep) >= (7200 / timestep))
+  [ ;weekend
+
+  ]
+  [ ;weekday
+    let pre-period period
+    ifelse ( (floor (ticks mod (10080 / timestep) / (1440 / timestep))) mod 2 = 0)
+    [ ;MWF
+      if (ticks mod (1440 / timestep) = 480 / timestep); 8:00 am
+      [
+        set period 0
+      ]
+      if (ticks mod (1440 / timestep) = 540 / timestep); 9:00 am
+      [
+        set period 1
+      ]
+      if (ticks mod (1440 / timestep) = 630 / timestep); 10:30 am
+      [
+        set period 2
+      ]
+      if (ticks mod (1440 / timestep) = 690 / timestep); 11:30 am
+      [
+        set period 3
+      ]
+      if (ticks mod (1440 / timestep) = 750 / timestep); 12:30 pm
+      [
+        set period 4
+      ]
+      if (ticks mod (1440 / timestep) = 810 / timestep); 1:30 pm
+      [
+        set period 5
+      ]
+      if (ticks mod (1440 / timestep) = 870 / timestep); 2:30 pm
+      [
+        set period 6
+      ]
+      if (ticks mod (1440 / timestep) = 930 / timestep); 3:30 pm
+      [
+        set period 7
+      ]
+      if not (pre-period = period)  [
+      move-to-class
+      connect]
+    ]
+    [ ;TR
+       if (ticks mod (1440 / timestep) = 480 / timestep); 8:00 am
+      [
+        set period 8
+      ]
+       if (ticks mod (1440 / timestep) = 540 / timestep); 9:00 am
+      [
+        set period 9
+      ]
+       if (ticks mod (1440 / timestep) = 630 / timestep); 10:00 am
+      [
+        set period 10
+      ]
+       if (ticks mod (1440 / timestep) = 720 / timestep); 12:00 pm
+      [
+        set period 11
+      ]
+      if (ticks mod (1440 / timestep) = 810 / timestep); 1:30 pm
+      [
+        set period 12
+      ]
+      if (ticks mod (1440 / timestep) = 900 / timestep); 3:00 pm
+      [
+        set period 13
+      ]
+      if not (pre-period = period)  [
+      move-to-class
+      connect
+      ]
+    ]
+  ]
+
+
+end
+
+to set-contact-rates
+  ask roomies [ set contact-rate random-float 1 set color white]
+  ask classes [ set contact-rate 0.5 * random-float 1 set color 48]
+  ask wings [ set contact-rate 0.25 * random-float 1 set color 69]
+  ask relationships[ set contact-rate random-float 1 set color 18]
+end
+
+;********************start infection mechanics********************
+
+to set-original-infection
+  let number-infected initial-percent-infected * num-students
+  ask n-of number-infected turtles [ become-infected ]
+end
+
+to set-original-immune
+  let number-immune initial-percent-immune * num-students
+  ask n-of number-immune turtles [ become-immune ]
+end
+
+;used in turtle context
+to become-infected
+  set color red
+  set infected? true
+  set sick-tick-counter 0
+  set time-sick 288 * random-exponential 6
+end
+
+;used in turtle context
+to become-susceptible
+  set infected? false
+  set immune? false
+  set color green
+end
+
+;used in turtle context
+to become-immune
+  set infected? false
+  set immune? true
+  set color gray
+  ask my-links [; set color gray - 4
+    die]
+end
+
+to try-to-infect
+  ask turtles with [infected?] [
+    ask my-links with [ not hidden?] [
+      if random-float 1 < ([contact-rate] of self) / 1000 [
+        ask other-end [
+          if not immune? and not infected? [
+            become-infected
+  ]]]]]
+end
+
+;used in turtle context
+to try-to-heal
+  ;10-15% die from bacterial (might be different now that we're looking at viral)
+  ifelse random-float 1 > 0.12
+  [
+    ifelse random-float 1 > 0.5
+    [ become-susceptible ]
+    [
+      become-immune
+      ]
+  ]
+  [die
+    ]
+end
+
+;********************end infection mechanics********************
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+200
 10
-1756
-809
+1154
+513
 -1
 -1
-6.0
+3.69
 1
 10
 1
@@ -223,8 +426,8 @@ GRAPHICS-WINDOW
 255
 -127
 0
-0
-0
+1
+1
 1
 ticks
 60.0
@@ -289,10 +492,25 @@ num-students
 num-students
 0
 4000
-3210
+3159
 1
 1
 NIL
+HORIZONTAL
+
+SLIDER
+17
+116
+196
+149
+initial-percent-infected
+initial-percent-infected
+0
+1
+0.2
+0.01
+1
+1
 HORIZONTAL
 
 SLIDER
@@ -302,53 +520,34 @@ SLIDER
 228
 num-wings
 num-wings
-2
 30
-30
+100
+60
 1
 1
 NIL
 HORIZONTAL
 
-BUTTON
+SLIDER
 23
-274
-155
-307
-Wing Links On/Off
-ask wings [ set hidden? not hidden?]
-NIL
+345
+195
+378
+initial-percent-immune
+initial-percent-immune
+0
 1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
+0.2
+.01
 1
-
-BUTTON
-27
-323
-183
-356
-Rommate Links On/Off
-ask roomies [set hidden? ( not hidden?)]
 NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
+HORIZONTAL
 
 SLIDER
-20
-124
-192
-157
+19
+231
+191
+264
 relationship-ratio
 relationship-ratio
 0
@@ -376,42 +575,38 @@ NIL
 NIL
 1
 
+PLOT
+1020
+191
+1285
+341
+plot
+ticks
+turtles
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"immune" 1.0 0 -7500403 true "" "plot count turtles with [not infected? and immune?]"
+"susceptible" 1.0 0 -10899396 true "" "plot count turtles with [not infected? and not immune?]"
+"infected" 1.0 0 -2674135 true "" "plot count turtles with [infected?]"
+
+MONITOR
+1219
+125
+1392
+170
+NIL
+count turtles with [infected?]
+17
+1
+11
+
 @#$#@#$#@
-## WHAT IS IT?
-
-(a general understanding of what the model is trying to show or explain)
-
-## HOW IT WORKS
-
-(what rules the agents use to create the overall behavior of the model)
-
-## HOW TO USE IT
-
-(how to use the model, including a description of each of the items in the Interface tab)
-
-## THINGS TO NOTICE
-
-(suggested things for the user to notice while running the model)
-
-## THINGS TO TRY
-
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
-
-## EXTENDING THE MODEL
-
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
-
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
-
-## RELATED MODELS
-
-(models in the NetLogo Models Library and elsewhere which are of related interest)
-
-## CREDITS AND REFERENCES
-
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
 @#$#@#$#@
 default
 true
