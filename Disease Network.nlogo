@@ -21,7 +21,9 @@ roomies-own [wing-index]
 links-own [contact-rate]
 
 globals [
-  class-list
+  class-list; [period][class][student]
+  class-positions; [period][]
+  class-connections; [period][]
   period  ;period: 0..13 if class, 0..7 are MWF, 8..13 are TR, -1 if no class
   timestep ;the amount of time in minutes elapsed each timestep
   ]
@@ -31,9 +33,9 @@ to setup
   random-seed 4646766
   create-turtles num-students;3200
 
-  layout-circle turtles 50
 
-  set period -1
+
+  set period 0
   set timestep 5
 
   ask turtles [
@@ -48,6 +50,21 @@ to setup
 
 
   schedule
+
+  set class-positions []
+  set class-connections []
+
+  while [period < 14] [
+    ask turtles [set xcor max-pxcor - 1 set ycor min-pycor + 1]
+    hide-links
+    determine-seating
+    build-connections
+    set period period + 1
+  ]
+
+  set period -1
+
+  layout-circle turtles 50
 
   ask turtles [ become-susceptible ]
   set-original-infection
@@ -176,8 +193,7 @@ to schedule
   ]
 end
 
-to connect
-  if (period > -1)[
+to build-connections
   let i 0
   let j 0
   let k 0; i^2 = j^2 = k^2 = ijk = -1
@@ -185,60 +201,67 @@ to connect
   let second-turtle -1
   let dist []
   let temp [];/*
+  let temp2 []
   while [k < length item period class-list] [
     set dist []
-    set temp [];Probably not needed
+    set temp [];Probably  needed???
     set i 0
     while [i < length item k (item period class-list)] [
       set j i + 1
       while[j < length item k (item period class-list)] [
         set first-turtle (item i (item k (item period class-list)))
         set second-turtle (item j (item k (item period class-list)))
-        if ( (not (turtle first-turtle = nobody)) and (not (turtle second-turtle = nobody)))[
         set temp lput sqrt(([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) ^ 2 + ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle) ^ 2) temp
         set temp lput first-turtle temp
         set temp lput second-turtle temp
-        set dist lput temp dist]
+        set dist lput temp dist
         set temp []
         set j j + 1
       ]
       set i i + 1
     ]
     set dist sort-by [first  ?1 < first ?2] dist
-;    show length dist
     set i 0
     let class-size length item k (item period class-list)
     let lesser 0
     let rand ((random(3) + 3) / 2) * class-size
     ifelse (rand < (class-size ^ 2 - class-size) / 2) [ set lesser  rand   ] [set lesser  (class-size ^ 2 - class-size) / 2]
-    while [i < lesser] [  ;Uniform random between 1.5 and 3 times class size?
-      ask turtle (item 1 (item i dist)) [create-class-with turtle (item 2 (item i dist))]
-      set i i + 1
+    while [length dist > lesser] [
+      set dist but-last dist
     ]
+    foreach dist [set temp2 lput but-first ? temp2]
     set k k + 1
   ];*/
-  ]
+  set class-connections lput temp2 class-connections
 end
 
-to move-to-class
-  ;random-seed 6707884
-  if (period > -1)[
-  ask turtles [set xcor max-pxcor - 1
-     set ycor min-pycor + 1]
-;  set period 0; TEMP
-  hide-links
+to connect
+  foreach (item period class-connections) [ask turtle item 0 ? [create-class-with turtle item 1 ?]]
+end
+
+to determine-seating
   let j 0
   let i 0
+  let turtle-num -1
+  let position-list []
   while [j < length item period class-list] [
     set i 0
     while [i < length item j (item period class-list)] [
-      if (not (turtle (item i (item j (item period class-list))) = nobody))[
-      ask turtle (item i (item j (item period class-list))) [set xcor (random(16) + (j mod 16) * 16) set ycor -1 * (random(12) + (floor (j / 16)) * 12)]]
+      set turtle-num (item i (item j (item period class-list)))
+      ask turtle turtle-num [set xcor (random(16) + (j mod 16) * 16) set ycor -1 * (random(12) + (floor (j / 16)) * 12)]
+      set position-list lput (list (turtle-num) ([xcor] of turtle turtle-num) ([ycor] of turtle turtle-num)) position-list
       set i i + 1
     ]
     set j j + 1
   ]
-  ]
+  set class-positions lput position-list class-positions
+end
+
+to move-to-class
+  ask turtles [set xcor max-pxcor - 1
+    set ycor min-pycor + 1]
+  hide-links
+  foreach (item period class-positions) [ask turtle (item 0 ?) [set xcor item 1 ? set ycor item 2 ?]]
 end
 
 to hide-links
@@ -452,8 +475,8 @@ GRAPHICS-WINDOW
 255
 -127
 0
-1
-1
+0
+0
 1
 ticks
 60.0
@@ -602,10 +625,10 @@ NIL
 1
 
 PLOT
-1061
-200
-1285
-341
+974
+206
+1229
+361
 plot
 ticks
 turtles
@@ -990,6 +1013,22 @@ NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="Sensitivity analysis" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>ticks</metric>
+    <enumeratedValueSet variable="num-students">
+      <value value="3185"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="initial-percent-infected" first="0.05" step="0.05" last="0.2"/>
+    <steppedValueSet variable="relationship-ratio" first="5" step="5" last="50"/>
+    <enumeratedValueSet variable="num-wings">
+      <value value="60"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="initial-percent-immune" first="0" step="0.05" last="0.5"/>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
