@@ -68,10 +68,7 @@ show [bedtime] of max-one-of turtles with [bedtime < 144] [bedtime]
 
   layout-circle turtles 50
 
-  ask turtles [ become-susceptible ]
-  set-original-vaccinated
-  set-original-infection
-  set-original-immune
+
 
 
   set-roomates
@@ -79,6 +76,12 @@ show [bedtime] of max-one-of turtles with [bedtime < 144] [bedtime]
   set-relationships
 
   set-contact-rates
+
+  ask turtles [ become-susceptible ]
+  set-original-vaccinated
+  set-original-infection
+  set-original-immune
+
   reset-ticks
 
 ;I have a 256X150 area.  I can do 16 cols, each 16 wide and 12 long with 4 rows giving me 64 classrooms
@@ -86,7 +89,7 @@ show [bedtime] of max-one-of turtles with [bedtime < 144] [bedtime]
 end
 
 to go
-  if (count turtles with [infected?] <= 80) [ stop]
+  if (count turtles with [infected?] <= 40) [ stop]
 
   move-around
 
@@ -95,13 +98,8 @@ to go
     if sick-tick-counter >= time-sick [ try-to-heal ]
   ]
 
-  ifelse (period = -2)
-  [
-    mingle
-  ]
-  [
+
     try-to-infect
-  ]
 
   tick
 end
@@ -239,6 +237,7 @@ to build-connections
 end
 
 to connect
+  hide-links
   foreach (item period class-connections) [ask turtle item 0 ? [create-class-with turtle item 1 ?]]
 end
 
@@ -263,7 +262,6 @@ end
 to move-to-class
   ask turtles [set xcor max-pxcor - 1
     set ycor min-pycor + 1]
-  hide-links
   foreach (item period class-positions) [ask turtle (item 0 ?) [set xcor item 1 ? set ycor item 2 ?]]
 end
 
@@ -276,7 +274,10 @@ end
 to move-around
   ifelse (ticks mod (10080 / timestep) >= (7200 / timestep))
   [ ;weekend
-
+    if (ticks mod (1440 / timestep) = 480 / timestep); 8:00 am
+      [
+        set period -1
+      ]
   ]
   [ ;weekday
     let pre-period period
@@ -366,6 +367,14 @@ to move-around
             set hidden? false]
           ]
         ]
+
+        if (Stay-at-home?)
+        [
+          ask turtles with [infected?]
+          [
+            ask my-links [ set hidden? true]
+          ]
+        ]
       ]
     ]
     ask turtles
@@ -378,20 +387,13 @@ to move-around
   ]
 end
 
-to mingle
-  hide-links
-  ask turtles with [infected? = false and immune? = false]
-  [
-    if random-float 1 < (count turtles with [infected?] / (10000 * count turtles))
-    [ become-infected]
-  ]
-end
 
 to return-to-rooms
   hide-links
   layout-circle turtles 50
   ask roomies [set hidden? false]
   ask wings [set hidden? false]
+  ask relationships [set hidden? false]
 
 end
 
@@ -594,7 +596,7 @@ num-students
 num-students
 0
 4000
-2038
+2000
 1
 1
 NIL
@@ -654,7 +656,7 @@ relationship-ratio
 relationship-ratio
 0
 100
-20
+21
 1
 1
 %
@@ -717,11 +719,22 @@ initial-percent-vaccinated
 initial-percent-vaccinated
 0
 1
-0.35
+0.5
 .01
 1
 NIL
 HORIZONTAL
+
+SWITCH
+89
+73
+227
+106
+Stay-at-home?
+Stay-at-home?
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1071,19 +1084,86 @@ NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="Sensitivity analysis" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="initial percent immune" repetitions="4" runMetricsEveryStep="true">
     <setup>setup</setup>
     <go>go</go>
-    <metric>ticks</metric>
+    <metric>count turtles with [infected?]</metric>
+    <steppedValueSet variable="initial-percent-immune" first="0.15" step="0.05" last="0.25"/>
+    <steppedValueSet variable="initial-percent-vaccinated" first="0.2" step="0.05" last="0.5"/>
     <enumeratedValueSet variable="num-students">
-      <value value="3185"/>
+      <value value="2000"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="initial-percent-infected" first="0.05" step="0.05" last="0.2"/>
-    <steppedValueSet variable="relationship-ratio" first="5" step="5" last="50"/>
+    <enumeratedValueSet variable="initial-percent-infected">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="relationship-ratio">
+      <value value="20"/>
+    </enumeratedValueSet>
     <enumeratedValueSet variable="num-wings">
       <value value="60"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="initial-percent-immune" first="0" step="0.05" last="0.5"/>
+  </experiment>
+  <experiment name="relationship ratio" repetitions="4" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count turtles with [infected?]</metric>
+    <enumeratedValueSet variable="initial-percent-immune">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="initial-percent-vaccinated" first="0.2" step="0.05" last="0.5"/>
+    <enumeratedValueSet variable="num-students">
+      <value value="2000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-percent-infected">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="relationship-ratio" first="19" step="1" last="21"/>
+    <enumeratedValueSet variable="num-wings">
+      <value value="60"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="initial percent infected" repetitions="4" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count turtles with [infected?]</metric>
+    <enumeratedValueSet variable="initial-percent-immune">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="initial-percent-vaccinated" first="0.2" step="0.05" last="0.5"/>
+    <enumeratedValueSet variable="num-students">
+      <value value="2000"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="initial-percent-infected" first="0.18" step="0.02" last="0.22"/>
+    <enumeratedValueSet variable="relationship-ratio">
+      <value value="20"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-wings">
+      <value value="60"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Stay-at-home" repetitions="6" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count turtles with [infected?]</metric>
+    <steppedValueSet variable="initial-percent-vaccinated" first="0.2" step="0.05" last="0.5"/>
+    <enumeratedValueSet variable="initial-percent-immune">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-percent-infected">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Stay-at-home?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-students">
+      <value value="2000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-wings">
+      <value value="60"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="relationship-ratio">
+      <value value="21"/>
+    </enumeratedValueSet>
   </experiment>
 </experiments>
 @#$#@#$#@
