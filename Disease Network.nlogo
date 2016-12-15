@@ -1,3 +1,4 @@
+
 turtles-own[
   gender
   class-count
@@ -5,6 +6,7 @@ turtles-own[
   immune?
   sick-tick-counter
   time-sick
+  bedtime
 ]
 
 patches-own[]
@@ -28,8 +30,10 @@ globals [
 
 to setup
   clear-all
-  random-seed 4646766
+  ;random-seed 4646766
   create-turtles num-students;3200
+
+
 
   set period 0
   set timestep 5
@@ -39,7 +43,11 @@ to setup
     ifelse random 2 = 0 [
       set gender "m"] [
       set gender "f"]
+    set bedtime random-normal 0 20
+    if bedtime < 0
+     [set bedtime floor ((1440 + bedtime) / timestep)]
   ]
+
 
   schedule
 
@@ -83,7 +91,14 @@ to go
     set sick-tick-counter sick-tick-counter + 1
     if sick-tick-counter >= time-sick [ try-to-heal ]
   ]
-  try-to-infect
+
+  ifelse (period = -2)
+  [
+    mingle
+  ]
+  [
+    try-to-infect
+  ]
 
   tick
 end
@@ -262,6 +277,7 @@ to move-around
   ]
   [ ;weekday
     let pre-period period
+
     ifelse ( (floor (ticks mod (10080 / timestep) / (1440 / timestep))) mod 2 = 0)
     [ ;MWF
       if (ticks mod (1440 / timestep) = 480 / timestep); 8:00 am
@@ -296,9 +312,10 @@ to move-around
       [
         set period 7
       ]
-      if not (pre-period = period)  [
-      move-to-class
-      connect]
+      if (ticks mod (1440 / timestep) = 980 / timestep); 4:20 pm
+      [
+        set period -1
+      ]
     ]
     [ ;TR
        if (ticks mod (1440 / timestep) = 480 / timestep); 8:00 am
@@ -325,13 +342,45 @@ to move-around
       [
         set period 13
       ]
-      if not (pre-period = period)  [
-      move-to-class
-      connect
+      if (ticks mod (1440 / timestep) = 950 / timestep); 3:50 pm
+      [
+        set period -1
+      ]
+    ]
+    if not (pre-period = period)  [
+      ifelse (period = -1)
+      [
+        return-to-rooms
+      ]
+      [
+        move-to-class
+        connect
+      ]
+    ]
+    ask turtles
+    [
+      if (ticks mod (1440 / timestep) = bedtime)
+      [
+        ask my-links [ set hidden? true]
       ]
     ]
   ]
+end
 
+to mingle
+  hide-links
+  ask turtles with [infected? = false and immune? = false]
+  [
+    if random-float 1 < (count turtles with [infected?] / (10000 * count turtles))
+    [ become-infected]
+  ]
+end
+
+to return-to-rooms
+  hide-links
+  layout-circle turtles 50
+  ask roomies [set hidden? false]
+  ask wings [set hidden? false]
 
 end
 
@@ -391,16 +440,43 @@ end
 ;used in turtle context
 to try-to-heal
   ;10-15% die from bacterial (might be different now that we're looking at viral)
-  ifelse random-float 1 > 0.12
+  ifelse random-float 1 > 0.12;0 CHANGE THIS BACK
   [
-    ifelse random-float 1 > 0.5
+    ifelse random-float 1 > 1;0.5
     [ become-susceptible ]
     [
       become-immune
       ]
   ]
-  [die
+  [
+    let revisedlist []
+    foreach class-connections [
+      let v ?
+      let newlist []
+      foreach v [
+        if(item 0 ? != who and item 1 ? != who) [
+          set newlist lput ? newlist
+        ]
+      ]
+      set revisedlist lput newlist revisedlist
     ]
+    set class-connections revisedlist
+
+    set revisedlist []
+    foreach class-positions [
+      let v ?
+      let newlist []
+      foreach v [
+        if(item 0 ? != who) [
+          set newlist lput ? newlist
+        ]
+      ]
+      set revisedlist lput newlist revisedlist
+    ]
+    set class-positions revisedlist
+    show "dead"
+    die
+  ]
 end
 
 ;********************end infection mechanics********************
@@ -426,8 +502,8 @@ GRAPHICS-WINDOW
 255
 -127
 0
-1
-1
+0
+0
 1
 ticks
 60.0
@@ -450,10 +526,10 @@ NIL
 1
 
 BUTTON
-105
-29
-168
-62
+109
+30
+172
+63
 Step
 go
 NIL
@@ -492,7 +568,7 @@ num-students
 num-students
 0
 4000
-3159
+3185
 1
 1
 NIL
@@ -576,10 +652,10 @@ NIL
 1
 
 PLOT
-1020
-191
-1285
-341
+974
+206
+1229
+361
 plot
 ticks
 turtles
@@ -606,7 +682,53 @@ count turtles with [infected?]
 1
 11
 
+MONITOR
+1170
+62
+1249
+107
+Time of Day
+floor (ticks mod (1440 / timestep) / (60 / timestep))
+17
+1
+11
+
 @#$#@#$#@
+## WHAT IS IT?
+
+(a general understanding of what the model is trying to show or explain)
+
+## HOW IT WORKS
+
+(what rules the agents use to create the overall behavior of the model)
+
+## HOW TO USE IT
+
+(how to use the model, including a description of each of the items in the Interface tab)
+
+## THINGS TO NOTICE
+
+(suggested things for the user to notice while running the model)
+
+## THINGS TO TRY
+
+(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+
+## EXTENDING THE MODEL
+
+(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+
+## NETLOGO FEATURES
+
+(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+
+## RELATED MODELS
+
+(models in the NetLogo Models Library and elsewhere which are of related interest)
+
+## CREDITS AND REFERENCES
+
+(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
 @#$#@#$#@
 default
 true
@@ -918,6 +1040,22 @@ NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="Sensitivity analysis" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>ticks</metric>
+    <enumeratedValueSet variable="num-students">
+      <value value="3185"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="initial-percent-infected" first="0.05" step="0.05" last="0.2"/>
+    <steppedValueSet variable="relationship-ratio" first="5" step="5" last="50"/>
+    <enumeratedValueSet variable="num-wings">
+      <value value="60"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="initial-percent-immune" first="0" step="0.05" last="0.5"/>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
