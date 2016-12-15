@@ -30,7 +30,7 @@ globals [
 
 to setup
   clear-all
-  random-seed 4646766
+  ;random-seed 4646766
   create-turtles num-students;3200
 
 
@@ -43,11 +43,12 @@ to setup
     ifelse random 2 = 0 [
       set gender "m"] [
       set gender "f"]
-    set bedtime random-normal 0 20
+    set bedtime random-normal 0 8
     if bedtime < 0
      [set bedtime floor ((1440 + bedtime) / timestep)]
   ]
 
+show [bedtime] of max-one-of turtles with [bedtime < 144] [bedtime]
 
   schedule
 
@@ -83,7 +84,7 @@ to setup
 end
 
 to go
-  if (count turtles with [infected?] <= 0) [ stop]
+  if (count turtles with [infected?] <= 80) [ stop]
 
   move-around
 
@@ -134,7 +135,7 @@ to set-wings
     while [ count this-wing with [count my-wings < (count this-wing - 1)] > 0] [
       ask one-of this-wing with [count my-wings < (count this-wing - 1)] [
         while [count my-wings < (count this-wing - 1)]
-        [ create-wing-with one-of other this-wing with [ not wing-neighbor? myself] ;super duper inefficient
+        [ create-wing-with one-of other this-wing with [ not wing-neighbor? myself]
         ]
       ]
     ]
@@ -355,6 +356,14 @@ to move-around
       [
         move-to-class
         connect
+        let not-in-class turtles-on patch (max-pxcor - 1) (min-pycor + 1)
+        ask not-in-class
+        [
+          ask my-links [
+            if member? other-end not-in-class[
+            set hidden? false]
+          ]
+        ]
       ]
     ]
     ask turtles
@@ -541,7 +550,7 @@ num-students
 num-students
 0
 4000
-3185
+2038
 1
 1
 NIL
