@@ -41,7 +41,7 @@ to setup
     ifelse random 2 = 0 [
       set gender "m"] [
       set gender "f"]
-    set bedtime random-normal 0 30
+    set bedtime random-normal 0 20
     if bedtime < 0
      [set bedtime floor ((1440 + bedtime) / timestep)]
   ]
@@ -194,10 +194,11 @@ to connect
       while[j < length item k (item period class-list)] [
         set first-turtle (item i (item k (item period class-list)))
         set second-turtle (item j (item k (item period class-list)))
+        if ( (not (turtle first-turtle = nobody)) and (not (turtle second-turtle = nobody)))[
         set temp lput sqrt(([xcor] of turtle first-turtle - [xcor] of turtle second-turtle) ^ 2 + ([ycor] of turtle first-turtle - [ycor] of turtle second-turtle) ^ 2) temp
         set temp lput first-turtle temp
         set temp lput second-turtle temp
-        set dist lput temp dist
+        set dist lput temp dist]
         set temp []
         set j j + 1
       ]
@@ -416,9 +417,9 @@ end
 ;used in turtle context
 to try-to-heal
   ;10-15% die from bacterial (might be different now that we're looking at viral)
-  ifelse random-float 1 > 0.12
+  ifelse random-float 1 > 0;0.12
   [
-    ifelse random-float 1 > 0.5
+    ifelse random-float 1 > 1;0.5
     [ become-susceptible ]
     [
       become-immune
@@ -451,8 +452,8 @@ GRAPHICS-WINDOW
 255
 -127
 0
-0
-0
+1
+1
 1
 ticks
 60.0
@@ -475,10 +476,10 @@ NIL
 1
 
 BUTTON
-105
-29
-168
-62
+109
+30
+172
+63
 Step
 go
 NIL
@@ -601,8 +602,8 @@ NIL
 1
 
 PLOT
-1020
-191
+1061
+200
 1285
 341
 plot
@@ -627,6 +628,17 @@ MONITOR
 170
 NIL
 count turtles with [infected?]
+17
+1
+11
+
+MONITOR
+1170
+62
+1249
+107
+Time of Day
+floor (ticks mod (1440 / timestep) / (60 / timestep))
 17
 1
 11
