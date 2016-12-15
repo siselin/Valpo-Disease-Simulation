@@ -474,8 +474,35 @@ to try-to-heal
       become-immune
       ]
   ]
-  [die
+  [
+    let revisedlist []
+    foreach class-connections [
+      let v ?
+      let newlist []
+      foreach v [
+        if(item 0 ? != who and item 1 ? != who) [
+          set newlist lput ? newlist
+        ]
+      ]
+      set revisedlist lput newlist revisedlist
     ]
+    set class-connections revisedlist
+
+    set revisedlist []
+    foreach class-positions [
+      let v ?
+      let newlist []
+      foreach v [
+        if(item 0 ? != who) [
+          set newlist lput ? newlist
+        ]
+      ]
+      set revisedlist lput newlist revisedlist
+    ]
+    set class-positions revisedlist
+    ;show "dead"
+    die
+  ]
 end
 
 ;********************end infection mechanics********************
@@ -681,7 +708,6 @@ count turtles with [infected?]
 1
 11
 
-
 SLIDER
 5
 274
@@ -696,16 +722,6 @@ initial-percent-vaccinated
 1
 NIL
 HORIZONTAL
-MONITOR
-1170
-62
-1249
-107
-Time of Day
-floor (ticks mod (1440 / timestep) / (60 / timestep))
-17
-1
-11
 
 @#$#@#$#@
 ## WHAT IS IT?
