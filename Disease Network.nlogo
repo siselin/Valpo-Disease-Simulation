@@ -4,6 +4,7 @@ turtles-own[
   class-count
   infected?
   immune?
+  vaccinated?
   sick-tick-counter
   time-sick
   bedtime
@@ -68,6 +69,7 @@ show [bedtime] of max-one-of turtles with [bedtime < 144] [bedtime]
   layout-circle turtles 50
 
   ask turtles [ become-susceptible ]
+  set-original-vaccinated
   set-original-infection
   set-original-immune
 
@@ -407,9 +409,16 @@ to set-original-infection
   ask n-of number-infected turtles [ become-infected ]
 end
 
+;33.5% of people aged 18-49 receive a vaccination each year
 to set-original-immune
   let number-immune initial-percent-immune * num-students
   ask n-of number-immune turtles [ become-immune ]
+end
+
+to set-original-vaccinated
+  ask turtles [ set vaccinated? false ]
+  let number-vaccinated initial-percent-vaccinated * num-students
+  ask n-of number-vaccinated turtles [ become-vaccinated ]
 end
 
 ;used in turtle context
@@ -418,6 +427,7 @@ to become-infected
   set infected? true
   set sick-tick-counter 0
   set time-sick 288 * random-exponential 6
+  if vaccinated? [ ask my-links [ set contact-rate contact-rate / 0.55 ] ]
 end
 
 ;used in turtle context
@@ -436,9 +446,16 @@ to become-immune
     die]
 end
 
+;used in turtle context
+;flu vaccine reduces risk of infection by 50-60%
+to become-vaccinated
+  ask my-links [ set contact-rate contact-rate * 0.55 ]
+  set vaccinated? true
+end
+
 to try-to-infect
   ask turtles with [infected?] [
-    ask my-links with [ not hidden?] [
+    ask my-links with [ not hidden? ] [
       if random-float 1 < ([contact-rate] of self) / 1000 [
         ask other-end [
           if not immune? and not infected? [
@@ -664,6 +681,21 @@ count turtles with [infected?]
 1
 11
 
+
+SLIDER
+5
+274
+194
+307
+initial-percent-vaccinated
+initial-percent-vaccinated
+0
+1
+0.35
+.01
+1
+NIL
+HORIZONTAL
 MONITOR
 1170
 62
